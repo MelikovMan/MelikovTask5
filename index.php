@@ -255,7 +255,7 @@ else {
 		exit();
 		}
 	}
-	$loginn = uniqid();
+	$loginn = uniqid('u',true);
 	$passok = uniqid('',true).strval(rand(0,1000));
 	$pass_user = password_hash($passok, PASSWORD_DEFAULT);
 	$logpdostate = $db->prepare("INSERT INTO login SET p_id=:id, login=:login, pass_hash=:hash");
