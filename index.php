@@ -1,12 +1,22 @@
 <?php
 header('Content-Type: text/html; charset=UTF-8');
+$user = 'u47551';
+$pass = '4166807';
 if ($_SERVER['REQUEST_METHOD'] == 'GET'){
 	  // Массив для временного хранения сообщений пользователю.
 	  $messages = array();
 	  $messages['saved']='';
 	  if (!empty($_COOKIE['save'])) {
 		setcookie('save', '', 100000);
-		$messages['saved'] = 'Спасибо, результаты сохранены.';
+		setcookie('login', '', 100000);
+		setcookie('pass', '', 100000);
+		$messages['saved'] = 'Thank you, your results were saved';
+		if (!empty($_COOKIE['pass'])) {
+			$messages[] = sprintf('You can <a href="login.php">log in</a> with login <strong>%s</strong>
+			  and password <strong>%s</strong> для изменения данных.',
+			  strip_tags($_COOKIE['login']),
+			  strip_tags($_COOKIE['pass']));
+		  }
 	  }
 	
 	  $errors = array();
@@ -53,14 +63,57 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET'){
 	  }
 	
 	  $values = array();
-	  $values['name'] = empty($_COOKIE['name_value']) ? '' : $_COOKIE['name_value'];
-	  $values['email'] = empty($_COOKIE['email_value']) ? '' : $_COOKIE['email_value'];
-	  $values['birth_date'] = empty($_COOKIE['birth_value']) ? '' : $_COOKIE['birth_value'];
-	  $values['sex'] = empty($_COOKIE['sex_value']) ? '' : $_COOKIE['sex_value'];
+	  $values['name'] = empty($_COOKIE['name_value']) ? '' : strip_tags($_COOKIE['name_value']);
+	  $values['email'] = empty($_COOKIE['email_value']) ? '' : strip_tags($_COOKIE['email_value']);
+	  $values['birth_date'] = empty($_COOKIE['birth_value']) ? '' : strip_tags($_COOKIE['birth_value']);
+	  $values['sex'] = empty($_COOKIE['sex_value']) ? '' : strip_tags($_COOKIE['sex_value']);
 	  $values['limbs'] = empty($_COOKIE['limb_value']) ? '' : intval($_COOKIE['limb_value']);
-	  $values['super'] = empty($_COOKIE['super_value']) ? '' : $_COOKIE['super_value'];
-	  $values['bio'] = empty($_COOKIE['bio_value']) ? '' : $_COOKIE['bio_value'];
+	  $values['super'] = empty($_COOKIE['super_value']) ? '' : strip_tags($_COOKIE['super_value']);
+	  $values['bio'] = empty($_COOKIE['bio_value']) ? '' : strip_tags($_COOKIE['bio_value']);
+	  if (empty($errors) && !empty($_COOKIE[session_name()]) &&
+      session_start() && !empty($_SESSION['login'])){
+		$db = new PDO('mysql:host=localhost;dbname=u47551', $user, $pass, array(PDO::ATTR_PERSISTENT => true));
+		try {
+			$stmt = $db->prepare("SELECT p_id FROM login WHERE login=:this_login");
+			$stmt->bindParam(':this_login',$_SESSION['login']);
+			if($stmt->execute()==false) {
+				print_r($stmt->errorCode());
+				print_r($stmt->errorInfo());
+				exit();
+			}
+			//TODO: Перенести поиск ключа в login.php и созранить в сессии.
+			$dbread=array();
+			$dbread=$stmt->fetch(PDO::FETCH_ASSOC);
+			$id = $dbread['p_id'];
+			$pdostate = $db->prepare("SELECT id,name,email,birthdate,sex,limb_count,bio FROM contracts WHERE id=:id");
+			$superstate = $db->prepare("SELECT name FROM superpowers WHERE person_id=:id");
+			$pdostate->bindParam(':id',$id);
+			$superstate->bindParam(':id',$id);
+			if($pdostate->execute()==false) {
+				print_r($pdostate->errorCode());
+				print_r($pdostate->errorInfo());
+				exit();
+			}
+			if($superstate->execute()==false) {
+				print_r($superstate->errorCode());
+				print_r($superstate->errorInfo());
+				exit();
+			}
+			$dbread = $pdostate->fetch(PDO::FETCH_ASSOC);
+			$dbread['super'] = $superstate->fetch(PDO::FETCH_COLUMN,0);
+			$values['name'] = strip_tags($dbread['name']);
+			$values['email'] = strip_tags($dbread['email']);
+			$values['birth_date'] = strip_tags($dbread['birthdate']);
+			$values['sex'] = strip_tags($dbread['sex']);
+			$values['limbs'] = intval($dbread['limb_count']);
+			$values['super'] = strip_tags($dbread['super_value']);
+			$values['bio'] = strip_tags($dbread['bio']);
 
+		}catch(PDOException $e){
+			print('Error : ' . $e->getMessage());
+			exit();
+		  }
+	  }
 	  include('form.php');
 }
 else {
@@ -171,39 +224,59 @@ $sex = $_POST['radio-group-1'];
 $limbs = intval($_POST['radio-group-2']);
 $superpowers = $_POST['field-name-4'];
 $bio= $_POST['bio-field'];
-$user = 'u47551';
-$pass = '4166807';
 $db = new PDO('mysql:host=localhost;dbname=u47551', $user, $pass, array(PDO::ATTR_PERSISTENT => true));
-try {
-  $stmt = $db->prepare("INSERT INTO contracts SET name=:name, email=:email, birthdate=:birthdate, sex=:sex, limb_count=:limbs, bio=:bio");
-  $stmt->bindParam(':name', $name);
-  $stmt->bindParam(':email', $email);
-  $stmt->bindParam(':birthdate', $birth);
-  $stmt->bindParam(':sex', $sex);
-  $stmt->bindParam(':limbs', $limbs);
-  $stmt->bindParam(':bio', $bio);
-  if($stmt->execute()==false){
-  print_r($stmt->errorCode());
-  print_r($stmt->errorInfo());
-  exit();
-  }
-  $id = $db->lastInsertId();
-  $sppe= $db->prepare("INSERT INTO superpowers SET name=:name, person_id=:person");
-  $sppe->bindParam(':person', $id);
-  foreach($superpowers as $inserting){
-	$sppe->bindParam(':name', $inserting);
-	if($sppe->execute()==false){
-	  print_r($sppe->errorCode());
-	  print_r($sppe->errorInfo());
-	  exit();
-	}
-  }
-} 
-catch(PDOException $e){
-  print('Error : ' . $e->getMessage());
-  exit();
+if (!empty($_COOKIE[session_name()]) &&
+session_start() && !empty($_SESSION['login'])) {
+// TODO: перезаписать данные в БД новыми данными,
+// кроме логина и пароля.
 }
+else {
+	try {
+	$stmt = $db->prepare("INSERT INTO contracts SET name=:name, email=:email, birthdate=:birthdate, sex=:sex, limb_count=:limbs, bio=:bio");
+	$stmt->bindParam(':name', $name);
+	$stmt->bindParam(':email', $email);
+	$stmt->bindParam(':birthdate', $birth);
+	$stmt->bindParam(':sex', $sex);
+	$stmt->bindParam(':limbs', $limbs);
+	$stmt->bindParam(':bio', $bio);
+	if($stmt->execute()==false){
+	print_r($stmt->errorCode());
+	print_r($stmt->errorInfo());
+	exit();
+	}
+	$id = $db->lastInsertId();
+	$sppe= $db->prepare("INSERT INTO superpowers SET name=:name, person_id=:person");
+	$sppe->bindParam(':person', $id);
+	foreach($superpowers as $inserting){
+		$sppe->bindParam(':name', $inserting);
+		if($sppe->execute()==false){
+		print_r($sppe->errorCode());
+		print_r($sppe->errorInfo());
+		exit();
+		}
+	}
+	$loginn = uniqid();
+	$passok = uniqid('',true).strval(rand(0,1000));
+	$pass_user = password_hash($passok, PASSWORD_DEFAULT);
+	$logpdostate = $db->prepare("INSERT INTO login SET p_id=:id, login=:login, pass_hash=:hash");
+	$logpdostate->bindParam(':id',$id);
+	$logpdostate->bindParam(':login',$loginn);
+	$logpdostate->bindParam(':hash',$pass_user);
+	if($logpdostate->execute() == false){
+		print_r($logpdostate->errorCode());
+		print_r($logpdostate->errorInfo());
+		exit();
+	}
+	setcookie('login', $loginn);
+	setcookie('pass', $passok);
+	} 
 
+
+	catch(PDOException $e){
+	print('Error : ' . $e->getMessage());
+	exit();
+	}
+}
 print_r("Succesfully added new stuff, probably...");
 setcookie('save', '1');
 header('Location: index.php');
