@@ -6,13 +6,14 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET'){
 	  // Массив для временного хранения сообщений пользователю.
 	  $messages = array();
 	  $messages['saved']='';
+	  $messages['passmessage'] = ''
 	  if (!empty($_COOKIE['save'])) {
 		setcookie('save', '', 100000);
 		setcookie('login', '', 100000);
 		setcookie('pass', '', 100000);
 		$messages['saved'] = 'Thank you, your results were saved';
 		if (!empty($_COOKIE['pass'])) {
-			$messages[] = sprintf('You can <a href="login.php">log in</a> with login <strong>%s</strong>
+			$messages['passmessage'] = sprintf('You can <a href="login.php">log in</a> with login <strong>%s</strong>
 			  and password <strong>%s</strong> для изменения данных.',
 			  strip_tags($_COOKIE['login']),
 			  strip_tags($_COOKIE['pass']));
@@ -71,20 +72,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET'){
 	  $values['super'] = empty($_COOKIE['super_value']) ? '' : strip_tags($_COOKIE['super_value']);
 	  $values['bio'] = empty($_COOKIE['bio_value']) ? '' : strip_tags($_COOKIE['bio_value']);
 	  if (empty($errors) && !empty($_COOKIE[session_name()]) &&
-      session_start() && !empty($_SESSION['login'])){
+      session_start() && !empty($_SESSION['login']) && !empty($_SESSION['uid'])){
 		$db = new PDO('mysql:host=localhost;dbname=u47551', $user, $pass, array(PDO::ATTR_PERSISTENT => true));
 		try {
-			$stmt = $db->prepare("SELECT p_id FROM login WHERE login=:this_login");
-			$stmt->bindParam(':this_login',$_SESSION['login']);
-			if($stmt->execute()==false) {
-				print_r($stmt->errorCode());
-				print_r($stmt->errorInfo());
-				exit();
-			}
-			//TODO: Перенести поиск ключа в login.php и созранить в сессии.
-			$dbread=array();
-			$dbread=$stmt->fetch(PDO::FETCH_ASSOC);
-			$id = $dbread['p_id'];
+			$id = $_SESSION['uid'];
 			$pdostate = $db->prepare("SELECT id,name,email,birthdate,sex,limb_count,bio FROM contracts WHERE id=:id");
 			$superstate = $db->prepare("SELECT name FROM superpowers WHERE person_id=:id");
 			$pdostate->bindParam(':id',$id);
@@ -226,7 +217,7 @@ $superpowers = $_POST['field-name-4'];
 $bio= $_POST['bio-field'];
 $db = new PDO('mysql:host=localhost;dbname=u47551', $user, $pass, array(PDO::ATTR_PERSISTENT => true));
 if (!empty($_COOKIE[session_name()]) &&
-session_start() && !empty($_SESSION['login'])) {
+session_start() && !empty($_SESSION['login']) && !empty($_SESSION['uid'])) {
 // TODO: перезаписать данные в БД новыми данными,
 // кроме логина и пароля.
 }

@@ -69,7 +69,10 @@
 	  Send: <br/>
 	  <input type="submit" value="Sending" />
 	  <br/>
-	  <?php print($messages['saved'])?>
+	  <?php print($messages['saved']);
+		print('<br/>');
+		print($messages['passmessage']); 
+	  ?>
   </form>
 </div>
 </div>
