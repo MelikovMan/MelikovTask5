@@ -6,6 +6,7 @@
   <link href='http://fonts.googleapis.com/css?family=Montserrat' rel='stylesheet' type='text/css'/>
 </head>
 <body>
+<a href="/login.php"> Login </a>
 <div class="form-wrapper">
 <div class="form-layer">
 <h1 class ="titles" id="linktitle"> Form </h1>

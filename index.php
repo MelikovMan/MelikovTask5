@@ -1,4 +1,5 @@
 <?php
+include('lib.php');
 header('Content-Type: text/html; charset=UTF-8');
 $user = 'u47551';
 $pass = '4166807';
@@ -73,7 +74,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET'){
 	  $values['bio'] = empty($_COOKIE['bio_value']) ? '' : strip_tags($_COOKIE['bio_value']);
 	  if (empty($errors) && !empty($_COOKIE[session_name()]) &&
       session_start() && !empty($_SESSION['login']) && !empty($_SESSION['uid'])){
-		$db = new PDO('mysql:host=localhost;dbname=u47551', $user, $pass, array(PDO::ATTR_PERSISTENT => true));
+		$db = connectToDB($user,$pass);
 		try {
 			$id = $_SESSION['uid'];
 			$pdostate = $db->prepare("SELECT id,name,email,birthdate,sex,limb_count,bio FROM contracts WHERE id=:id");
@@ -215,11 +216,46 @@ $sex = $_POST['radio-group-1'];
 $limbs = intval($_POST['radio-group-2']);
 $superpowers = $_POST['field-name-4'];
 $bio= $_POST['bio-field'];
-$db = new PDO('mysql:host=localhost;dbname=u47551', $user, $pass, array(PDO::ATTR_PERSISTENT => true));
+$db = connectToDB($user,$pass);
 if (!empty($_COOKIE[session_name()]) &&
 session_start() && !empty($_SESSION['login']) && !empty($_SESSION['uid'])) {
 // TODO: перезаписать данные в БД новыми данными,
 // кроме логина и пароля.
+	try{
+		$stmt = $db->prepare("UPDATE contracts SET name=:name, email=:email, birthdate=:birthdate, sex=:sex, limb_count=:limbs, bio=:bio WHERE id=:this_id");
+		$stmt->bindParam(':name', $name);
+		$stmt->bindParam(':email', $email);
+		$stmt->bindParam(':birthdate', $birth);
+		$stmt->bindParam(':sex', $sex);
+		$stmt->bindParam(':limbs', $limbs);
+		$stmt->bindParam(':bio', $bio);
+		$stmt->bindParam(':this_id', $_SESSION['uid']);
+		if($stmt->execute()==false){
+			print_r($stmt->errorCode());
+			print_r($stmt->errorInfo());
+			exit();
+		}
+		$spped = $db->prepare("DELETE FROM superpowers WHERE person_id=:this_id");
+		$spped->bindParam(':this_id', $_SESSION['uid']);
+		if($spped->execute()==false){
+			print_r($sppe->errorCode());
+			print_r($sppe->errorInfo());
+			exit();
+		}
+		$sppe= $db->prepare("INSERT INTO superpowers SET name=:name, person_id=:person");
+		$sppe->bindParam(':person', $_SESSION['uid']);
+		foreach($superpowers as $inserting){
+			$sppe->bindParam(':name', $inserting);
+			if($sppe->execute()==false){
+			print_r($sppe->errorCode());
+			print_r($sppe->errorInfo());
+			exit();
+			}
+		}
+	} catch(PDOException $e){
+		print('Error : ' . $e->getMessage());
+		exit();
+		}
 }
 else {
 	try {
