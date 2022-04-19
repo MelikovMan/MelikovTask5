@@ -5,10 +5,20 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no"/>
   <link href='http://fonts.googleapis.com/css?family=Montserrat' rel='stylesheet' type='text/css'/>
 </head>
-<body>
-<a href="/login.php"> Login </a>
+<body><a href="./login.php"> Login </a>
 <div class="form-wrapper">
 <div class="form-layer">
+<?php
+	/*print_r("No Errors:".boolval(empty($errors)));
+	print("<br/>");
+	print_r("Session cookie:".!empty($_COOKIE[session_name()]));
+	print("<br/>");
+	print_r("Session start:".session_start());
+	print("<br/>");
+	print_r("Login info:".!empty($_SESSION['login']));
+	*/
+?>
+
 <h1 class ="titles" id="linktitle"> Form </h1>
   <form action ="" method = "POST">
 	<label>

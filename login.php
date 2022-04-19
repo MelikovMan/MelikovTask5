@@ -22,10 +22,12 @@ if (!empty($_SESSION['login'])) {
   // TODO: Сделать выход (окончание сессии вызовом session_destroy()
   //при нажатии на кнопку Выход).
   // Делаем перенаправление на форму.
+  setcookie(session_name(),'',1000000);
+  session_destroy();
   header('Location: ./');
 }
-if(!empty($_COOKIE('bad_login'))){
-    setcookie('bad_login','',100000);
+if(!empty($_COOKIE['bad_login'])){
+    setcookie('bad_login','',1000000);
     $badloging = true;
 }
 else $badloging = false;
@@ -34,8 +36,11 @@ else $badloging = false;
 if ($_SERVER['REQUEST_METHOD'] == 'GET') {
 ?>
 
-<form action="" method="post" <?php if ?>>
+<form action="" method="post">
+  Login:
   <input name="login" />
+  <br/>
+  Password:
   <input name="pass" />
   <input type="submit" value="Войти" />
 </form>
@@ -56,14 +61,16 @@ else {
 				print_r($stmt->errorInfo());
 				exit();
 			}
-            catch(PDOException $e){
-                print('Error : ' . $e->getMessage());
-                exit();
-            }
+    }
+      catch(PDOException $e){
+      print('Error : ' . $e->getMessage());
+        exit();
+    }
 	$dbread=array();
 	$dbread=$stmt->fetch(PDO::FETCH_ASSOC);
-    if(!password_verify($_POST['pass'],$dbread['pass_hash'])){
-        setcookie('bad_login',1,time() + 30 * 24 * 60 * 60));
+  
+    if(empty($dbread['pass_hash']) || !password_verify($_POST['pass'],$dbread['pass_hash'])){
+        setcookie('bad_login',1,time() + 30 * 24 * 60 * 60);
         header('Location: ./login.php');   
 
     }
@@ -76,6 +83,7 @@ else {
   // Записываем ID пользователя.
   $_SESSION['uid'] = $dbread['p_id'];
   // Делаем перенаправление.
+  print_r($dbread);
   header('Location: ./');
     }
 }

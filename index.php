@@ -7,7 +7,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET'){
 	  // Массив для временного хранения сообщений пользователю.
 	  $messages = array();
 	  $messages['saved']='';
-	  $messages['passmessage'] = ''
+	  $messages['passmessage'] = '';
 	  if (!empty($_COOKIE['save'])) {
 		setcookie('save', '', 100000);
 		setcookie('login', '', 100000);
@@ -72,12 +72,16 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET'){
 	  $values['limbs'] = empty($_COOKIE['limb_value']) ? '' : intval($_COOKIE['limb_value']);
 	  $values['super'] = empty($_COOKIE['super_value']) ? '' : strip_tags($_COOKIE['super_value']);
 	  $values['bio'] = empty($_COOKIE['bio_value']) ? '' : strip_tags($_COOKIE['bio_value']);
-	  if (empty($errors) && !empty($_COOKIE[session_name()]) &&
-      session_start() && !empty($_SESSION['login']) && !empty($_SESSION['uid'])){
+	  //print_r(empty($errors));
+	  //print_r(!empty($_COOKIE[session_name()]));
+	  //print_r(session_start());
+	  //print_r(!empty($_SESSION['login']));
+	  if (!empty($_COOKIE[session_name()]) &&
+      session_start() && !empty($_SESSION['login'])){
 		$db = connectToDB($user,$pass);
 		try {
 			$id = $_SESSION['uid'];
-			$pdostate = $db->prepare("SELECT id,name,email,birthdate,sex,limb_count,bio FROM contracts WHERE id=:id");
+			$pdostate = $db->prepare("SELECT name,email,birthdate,sex,limb_count,bio FROM contracts WHERE id=:id");
 			$superstate = $db->prepare("SELECT name FROM superpowers WHERE person_id=:id");
 			$pdostate->bindParam(':id',$id);
 			$superstate->bindParam(':id',$id);
@@ -92,13 +96,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET'){
 				exit();
 			}
 			$dbread = $pdostate->fetch(PDO::FETCH_ASSOC);
-			$dbread['super'] = $superstate->fetch(PDO::FETCH_COLUMN,0);
+			$dbread['super'] = $superstate->fetchAll(PDO::FETCH_COLUMN,0);
 			$values['name'] = strip_tags($dbread['name']);
 			$values['email'] = strip_tags($dbread['email']);
 			$values['birth_date'] = strip_tags($dbread['birthdate']);
 			$values['sex'] = strip_tags($dbread['sex']);
 			$values['limbs'] = intval($dbread['limb_count']);
-			$values['super'] = strip_tags($dbread['super_value']);
+			$values['super'] = $dbread['super'];
 			$values['bio'] = strip_tags($dbread['bio']);
 
 		}catch(PDOException $e){
@@ -283,7 +287,7 @@ else {
 		}
 	}
 	$loginn = uniqid('u',true);
-	$passok = uniqid('',true).strval(rand(0,1000));
+	$passok = uniqid('',true).strval(rand(0,100));
 	$pass_user = password_hash($passok, PASSWORD_DEFAULT);
 	$logpdostate = $db->prepare("INSERT INTO login SET p_id=:id, login=:login, pass_hash=:hash");
 	$logpdostate->bindParam(':id',$id);
