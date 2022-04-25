@@ -3,6 +3,12 @@ include('lib.php');
 header('Content-Type: text/html; charset=UTF-8');
 $user = 'u47551';
 $pass = '4166807';
+function validateArray($arr){
+	foreach($arr as $checking){
+		if ($checking === 1) return false;
+	}
+	return true;
+}
 if ($_SERVER['REQUEST_METHOD'] == 'GET'){
 	  // Массив для временного хранения сообщений пользователю.
 	  $messages = array();
@@ -70,13 +76,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET'){
 	  $values['birth_date'] = empty($_COOKIE['birth_value']) ? '' : strip_tags($_COOKIE['birth_value']);
 	  $values['sex'] = empty($_COOKIE['sex_value']) ? '' : strip_tags($_COOKIE['sex_value']);
 	  $values['limbs'] = empty($_COOKIE['limb_value']) ? '' : intval($_COOKIE['limb_value']);
-	  $values['super'] = empty($_COOKIE['super_value']) ? '' : strip_tags($_COOKIE['super_value']);
+	  $values['super'] = empty($_COOKIE['super_value']) ? '' : json_decode($_COOKIE['super_value']);
 	  $values['bio'] = empty($_COOKIE['bio_value']) ? '' : strip_tags($_COOKIE['bio_value']);
 	  //print_r(empty($errors));
 	  //print_r(!empty($_COOKIE[session_name()]));
 	  //print_r(session_start());
 	  //print_r(!empty($_SESSION['login']));
-	  if (!empty($_COOKIE[session_name()]) &&
+	  if (validateArray($errors) && !empty($_COOKIE[session_name()]) &&
       session_start() && !empty($_SESSION['login'])){
 		$db = connectToDB($user,$pass);
 		try {
@@ -108,10 +114,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET'){
 		}catch(PDOException $e){
 			print('Error : ' . $e->getMessage());
 			exit();
-		  }
-	  }
-	  include('form.php');
-}
+		}
+		printf('Вход с логином %s, uid %d', $_SESSION['login'], $_SESSION['uid']);
+		}
+	include('form.php');
+	 }
 else {
 $errors = FALSE;
 $regex = "/^\s*\w+[\w\s-]*$/";
@@ -183,7 +190,7 @@ if (!$super_correct){
     $errors = TRUE;
 }
 else {
-	setcookie('super_value', $_POST['field-name-4'], time() + 30 * 24 * 60 * 60);
+	setcookie('super_value', json_encode($_POST['field-name-4']), time() + 30 * 24 * 60 * 60);
 }
 
 if(empty($_POST['bio-field']) || !preg_match($bioregex,$_POST['bio-field'])){

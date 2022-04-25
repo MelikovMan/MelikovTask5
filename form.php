@@ -5,7 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no"/>
   <link href='http://fonts.googleapis.com/css?family=Montserrat' rel='stylesheet' type='text/css'/>
 </head>
-<body><a href="./login.php"> Login </a>
+<body>
+<?php $sessionStarted = !empty($_COOKIE[session_name()]) &&
+      !empty($_SESSION['login']); ?>
+<a href="./login.php"> 
+<?php if($sessionStarted) print('Logout');
+	else print('Login');
+?>
+ </a>
 <div class="form-wrapper">
 <div class="form-layer">
 <?php
@@ -62,9 +69,9 @@
 			<br/>
 			<select name="field-name-4[]" <?php if($errors['super']) print('class="error"');?>
 			  multiple="multiple">
-			  <option value="immortality" <?php if(array_search('immortality',array($values['super']))!==false) print('selected');?>>Immortality</option>
-			  <option value="walkthroughwalls" <?php if(array_search('walkthroughwalls',array($values['super']))!==false) print('selected');?>>Walk through walls</option>
-			  <option value="levitation" <?php if(array_search('levitation',array($values['super']))!==false) print('selected');?>>levitation</option>
+			  <option value="immortality" <?php if(array_search('immortality',$values['super'])!==false) print('selected');?>>Immortality</option>
+			  <option value="walkthroughwalls" <?php if(array_search('walkthroughwalls',$values['super'])!==false) print('selected');?>>Walk through walls</option>
+			  <option value="levitation" <?php if(array_search('levitation',$values['super'])!==false) print('selected');?>>levitation</option>
 			</select>
 			<?php if($errors['super']) print($messages['bad_super']) ?>
 		  </label><br />
